@@ -32,7 +32,7 @@ mime = "0.3.17"
 image_worker = { path = "crates/image_worker" }
 
 [profile.dev]
-incremental = true
+incremental = false
 opt-level = 0
 debug = 0
 codegen-units = 256
