@@ -1,0 +1,8 @@
+{
+  "plugins": ["prettier-plugin-vue"],
+  "arrowParens": "avoid",
+  "endOfLine": "lf",
+  "semi": true,
+  "trailingComma": "none",
+  "vueIndentScriptAndStyle": false
+}

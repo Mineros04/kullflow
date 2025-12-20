@@ -7,7 +7,7 @@
   --spacing-inherit: inherit;
 
   /* Defining the complex shadow as a single theme variable */
-  --shadow-glow-card: 
+  --shadow-glow-card:
     inset 0 -80px 60px -30px var(--color-sky-600),
     inset 0 -40px 30px -8px rgba(102, 148, 255, 0.5),
     inset 0 -20px 20px -6px rgba(255, 255, 255, 0.4),
@@ -16,11 +16,11 @@
 
   /* Defining the specific corner radius */
   --radius-card: 80px;
-  }
+}
 
 /* Creating a custom utility class that uses these theme variables */
 @utility shadow-card {
-  background-image: linear-gradient(to bottom, #0A0909, #09101F);
+  background-image: linear-gradient(to bottom, #0a0909, #09101f);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-glow-card);
 }

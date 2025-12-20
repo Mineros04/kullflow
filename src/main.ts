@@ -13,13 +13,13 @@ import "@fontsource/poppins/900";
 
 // Automatic routing.
 const router = createRouter({
-	history: createWebHashHistory(),
-	routes,
+  history: createWebHashHistory(),
+  routes
 });
 
 // HMR for page navigation.
 if (import.meta.hot) {
-	handleHotUpdate(router);
+  handleHotUpdate(router);
 }
 
 const app = createApp(App);
