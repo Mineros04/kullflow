@@ -34,7 +34,6 @@ onMounted(() => {
 </script>
 
 <template>
-   <canvas ref="canvas" class="w-screen h-screen"></canvas> <router-link to="/"
-    >go back</router-link
-  >
+  <canvas ref="canvas" class="h-screen w-screen"></canvas>
+  <router-link to="/">go back</router-link>
 </template>

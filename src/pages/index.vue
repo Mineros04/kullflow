@@ -19,31 +19,22 @@ async function selectDirectory() {
 </script>
 
 <template>
-
   <div>
-     <img
+    <img
       src="@/assets/bg-1.avif"
       alt=""
-      class="fixed top-0 left-0 w-screen h-screen object-cover -z-1"
+      class="fixed top-0 left-0 -z-1 h-screen w-screen object-cover"
     />
-    <div class="h-screen w-screen grid place-items-center">
-
+    <div class="grid h-screen w-screen place-items-center">
       <div
-        class="p-16 card bg-base-300 shadow-glow-card rounded-4xl flex flex-col items-center gap-4"
+        class="card bg-base-300 shadow-glow-card flex flex-col items-center gap-4 rounded-4xl p-16"
       >
-
-        <h1 class="card-title text-4xl font-black tracking-wide"> KullFlow </h1>
-         <span> Begin by choosing a directory to cull. </span> <router-link
-          class="btn btn-info text-xl mt-4"
-          to="/cull"
-          > <Icon icon="mdi:folder-open" /> <span>Choose a directory</span>
-          </router-link
-        >
+        <h1 class="card-title text-4xl font-black tracking-wide">KullFlow</h1>
+        <span> Begin by choosing a directory to cull. </span>
+        <router-link class="btn btn-info mt-4 text-xl" to="/cull">
+          <Icon icon="mdi:folder-open" /> <span>Choose a directory</span>
+        </router-link>
       </div>
-
     </div>
-
   </div>
-
 </template>
-
