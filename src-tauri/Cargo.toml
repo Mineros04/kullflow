@@ -3,7 +3,7 @@ name = "kullflow"
 version = "0.1.0"
 description = "A Tauri App"
 authors = ["you"]
-edition = "2021"
+edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -13,6 +13,9 @@ edition = "2021"
 # This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
 name = "kullflow_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
+
+[workspace]
+members = ["crates/*"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
@@ -26,16 +29,18 @@ tokio = "1.48.0"
 urlencoding = "2.1.3"
 mime_guess = "2.0.5"
 mime = "0.3.17"
-image = { version = "0.25.9", default-features = false, features = ["png"] }
-fast_image_resize = "5.4.0"
+image_worker = { path = "crates/image_worker" }
 
 [profile.dev]
 incremental = true
-opt-level = 1
+opt-level = 0
 debug = 0
 codegen-units = 256
 
 [profile.dev.package."*"]
+opt-level = 3
+
+[profile.dev.package.image_worker]
 opt-level = 3
 
 [profile.release]
