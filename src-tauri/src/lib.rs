@@ -73,7 +73,6 @@ pub async fn generate_image_response(request: Request<Vec<u8>>) -> Response<Vec<
 pub fn run() {
     tauri::Builder::default()
         .register_asynchronous_uri_scheme_protocol("image", |_app, request, responder| {
-            //println!("RUNNING IMAGE PROTOCOL");
             tauri::async_runtime::spawn(async move {
                 let response = generate_image_response(request).await;
 
@@ -81,7 +80,15 @@ pub fn run() {
             });
         })
         .plugin(tauri_plugin_dialog::init())
-        //.invoke_handler(tauri::generate_handler![greet])
+        .setup(|app| {
+            app.manage(AppState {
+                img_count: Mutex::new(0),
+                img_basenames: Mutex::new(Vec::new()),
+                img_dir: Mutex::new("".into()) 
+            });
+            
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
