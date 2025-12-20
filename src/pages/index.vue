@@ -2,6 +2,7 @@
 import { Icon } from "@iconify/vue";
 import { open } from "@tauri-apps/plugin-dialog";
 
+// eslint-disable-next-line
 async function selectDirectory() {
   const dir = await open({
     directory: true,
