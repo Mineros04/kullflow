@@ -1,6 +1,6 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-use tauri::{Manager, http::{Request, Response, StatusCode}};
-use std::{path::PathBuf, sync::Mutex};
+use tauri::{Manager, Runtime, http::{Request, Response, StatusCode}};
+use std::{path::Path, sync::Mutex};
 use image_worker::resize_image_to_fit;
 
 struct AppState {
@@ -9,34 +9,39 @@ struct AppState {
     img_dir: Mutex<String>
 }
 
-pub async fn generate_image_response(request: Request<Vec<u8>>) -> Response<Vec<u8>> {
+async fn generate_image_response<R: Runtime>(app: tauri::AppHandle<R>, request: Request<Vec<u8>>) -> Response<Vec<u8>> {
     let path_str = request.uri().path();
-    
-    // Decode the URL
-    let decoded_path = urlencoding::decode(path_str)
-        .map(|s| s.to_string())
-        .unwrap_or_else(|_| path_str.to_string());
+    let index = path_str.trim_start_matches('/').parse::<usize>();
 
-    let path = if cfg!(windows) && decoded_path.starts_with('/') {
-        PathBuf::from(&decoded_path[1..])
+    let path = match index {
+        Ok(idx) => {
+            let state = app.state::<AppState>();
+            let basenames = state.img_basenames.lock().unwrap();
+            if let Some(name) = basenames.get(idx) {
+                let dir = state.img_dir.lock().unwrap();
+                Path::new(&*dir).join(name)
     } else {
-        PathBuf::from(&decoded_path)
-    };
-
-    let extension = path.extension().unwrap_or_default().to_string_lossy();
-    let mime_type = mime_guess::from_ext(&extension).first_or_octet_stream();
-    if mime_type.type_() != mime::IMAGE {
+                return Response::builder()
+                    .status(StatusCode::NOT_FOUND)
+                    .header("Access-Control-Allow-Origin", "*")
+                    .body("Image index out of bounds.".as_bytes().to_vec())
+                    .unwrap();
+            }
+        }
+        Err(_) => {
         return Response::builder()
-            .status(StatusCode::UNSUPPORTED_MEDIA_TYPE)
+                .status(StatusCode::BAD_REQUEST)
             .header("Access-Control-Allow-Origin", "*")
-            .body("File is not an image.".as_bytes().to_vec())
+                .body("Invalid image index.".as_bytes().to_vec())
             .unwrap();
     }
+    };
 
     // Asynchronously read the file and return it as a Response.
     match tokio::fs::read(&path).await {
         Ok(data) => {
             // Resize the image if needed to ensure we do not transfer images that are too large.
+            // TODO: Adapt size to users screen (or really anything, so that the dimensions are not static ints).
             let img_res = resize_image_to_fit(data, 1920, 1080);
             return match img_res {
                 // Image converted successfully.
@@ -72,9 +77,10 @@ pub async fn generate_image_response(request: Request<Vec<u8>>) -> Response<Vec<
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .register_asynchronous_uri_scheme_protocol("image", |_app, request, responder| {
+        .register_asynchronous_uri_scheme_protocol("image", |ctx, request, responder| {
+            let app = ctx.app_handle().clone();
             tauri::async_runtime::spawn(async move {
-                let response = generate_image_response(request).await;
+                let response = generate_image_response(app, request).await;
 
                 responder.respond(response);
             });
