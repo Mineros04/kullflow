@@ -20,8 +20,11 @@ async function selectDirectory() {
   }
 
   // Directory provided, pass it to backend to parse and prepare state.
-  await invoke("init_images", { dirStr: dir });
-  router.push("/cull");
+  const imageCount = (await invoke("init_images", { dirStr: dir })) as number;
+  router.push({
+    path: "/cull",
+    query: { imageCount }
+  });
 }
 </script>
 

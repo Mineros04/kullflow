@@ -13,7 +13,6 @@ async function renderImage(idx: number) {
     return;
   }
 
-  console.log(res.headers);
   const width = parseInt(res.headers.get("X-Image-Width")!);
   const height = parseInt(res.headers.get("X-Image-Height")!);
 

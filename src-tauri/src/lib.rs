@@ -102,7 +102,7 @@ async fn init_images<R: Runtime>(app: tauri::AppHandle<R>, dir_str: &str) -> Res
     *state.img_basenames.lock().unwrap() = file_names;
     *state.img_dir.lock().unwrap() = dir_str.to_string();
 
-    Ok(file_names_len - 1)
+    Ok(file_names_len)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
