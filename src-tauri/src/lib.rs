@@ -19,7 +19,7 @@ pub struct ImageInfo {
 
 struct AppState {
     img_count: Mutex<usize>,
-    img_basenames: Mutex<Vec<ImageInfo>>,
+    images: Mutex<Vec<ImageInfo>>,
     img_dir: Mutex<String>
 }
 
@@ -31,7 +31,7 @@ async fn generate_image_response<R: Runtime>(app: tauri::AppHandle<R>, request: 
     let path = match index {
         Ok(idx) => {
             let state = app.state::<AppState>();
-            let basenames = state.img_basenames.lock().unwrap();
+            let basenames = state.images.lock().unwrap();
 
             if let Some(img_info) = basenames.get(idx) {
                 let dir = state.img_dir.lock().unwrap();
@@ -95,7 +95,7 @@ async fn init_images<R: Runtime>(app: tauri::AppHandle<R>, dir_str: &str) -> Res
     let dir_path = Path::new(dir_str);
     
     let mut entries = tokio::fs::read_dir(dir_path).await.map_err(|e| e.to_string())?;
-    let mut file_names = Vec::new();
+    let mut images = Vec::new();
 
     while let Some(entry) = entries.next_entry().await.map_err(|e| e.to_string())? {
         let path = entry.path();
@@ -108,17 +108,20 @@ async fn init_images<R: Runtime>(app: tauri::AppHandle<R>, dir_str: &str) -> Res
 
         // Only accept valid UTF-8 filenames to ensure they can be opened later.
         if path.is_file() && let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-            file_names.push(name.to_owned());
+            images.push(ImageInfo { 
+                basename: name.to_string(),
+                status: CullState::Pending
+            });
         }
     }
 
     let state = app.state::<AppState>();
-    let file_names_len = file_names.len();
-    *state.img_count.lock().unwrap() = file_names_len;
-    *state.img_basenames.lock().unwrap() = file_names;
+    let images_len = images.len();
+    *state.img_count.lock().unwrap() = images_len;
+    *state.images.lock().unwrap() = images;
     *state.img_dir.lock().unwrap() = dir_str.to_string();
 
-    Ok(file_names_len)
+    Ok(images_len)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -136,7 +139,7 @@ pub fn run() {
         .setup(|app| {
             app.manage(AppState {
                 img_count: Mutex::new(0),
-                img_basenames: Mutex::new(Vec::new()),
+                images: Mutex::new(Vec::new()),
                 img_dir: Mutex::new("".into()) 
             });
             
