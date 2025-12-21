@@ -55,7 +55,7 @@ onMounted(() => {
         <icon icon="mdi:arrow-up-bold" class="text-2xl" />
       </button>
       <button
-        class="btn btn-circle btn-error btn-lg ring-error ring-offset-base-100ring-0 focus:ring-2 focus:ring-offset-2"
+        class="btn btn-circle btn-error btn-lg ring-error ring-offset-base-100 ring-0 focus:ring-2 focus:ring-offset-2"
       >
         <icon icon="mdi:arrow-down-bold" class="text-2xl" />
       </button>
