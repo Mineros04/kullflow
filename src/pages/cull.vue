@@ -47,17 +47,15 @@ onMounted(() => {
   </div>
 
   <!-- Actions dock -->
-  <div class="fixed bottom-8 left-1/2 -translate-x-1/2">
+  <div class="fixed bottom-2 left-1/2 -translate-x-1/2">
     <div class="bg-base-100/20 flex gap-2 rounded-full p-4 backdrop-blur-md">
       <button
-        class="btn btn-circle btn-success btn-lg ring-success ring-offset-base-100 tooltip tooltip-bottom tooltip-success ring-0 focus:ring-2 focus:ring-offset-2"
-        data-tip="Keep"
+        class="btn btn-circle btn-success btn-lg ring-success ring-offset-base-100 ring-0 focus:ring-2 focus:ring-offset-2"
       >
         <icon icon="mdi:arrow-up-bold" class="text-2xl" />
       </button>
       <button
-        class="btn btn-circle btn-error btn-lg ring-error ring-offset-base-100 tooltip tooltip-bottom tooltip-error ring-0 focus:ring-2 focus:ring-offset-2"
-        data-tip="Remove"
+        class="btn btn-circle btn-error btn-lg ring-error ring-offset-base-100ring-0 focus:ring-2 focus:ring-offset-2"
       >
         <icon icon="mdi:arrow-down-bold" class="text-2xl" />
       </button>
