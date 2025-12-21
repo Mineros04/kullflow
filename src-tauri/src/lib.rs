@@ -1,11 +1,26 @@
+use serde::{Deserialize, Serialize};
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 use tauri::{Manager, Runtime, http::{Request, Response, StatusCode}};
 use std::{path::Path, sync::Mutex};
 use image_worker::resize_image_to_fit;
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum CullState {
+    Pending,
+    Keep,
+    Delete
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ImageInfo {
+    pub basename: String,
+    pub status: CullState
+}
+
 struct AppState {
     img_count: Mutex<usize>,
-    img_basenames: Mutex<Vec<String>>,
+    img_basenames: Mutex<Vec<ImageInfo>>,
     img_dir: Mutex<String>
 }
 
@@ -13,13 +28,15 @@ async fn generate_image_response<R: Runtime>(app: tauri::AppHandle<R>, request: 
     let path_str = request.uri().path();
     let index = path_str.trim_start_matches('/').parse::<usize>();
 
+    // Prepare the path of the image from the app state based on provided index.
     let path = match index {
         Ok(idx) => {
             let state = app.state::<AppState>();
             let basenames = state.img_basenames.lock().unwrap();
-            if let Some(name) = basenames.get(idx) {
+
+            if let Some(img_info) = basenames.get(idx) {
                 let dir = state.img_dir.lock().unwrap();
-                Path::new(&*dir).join(name)
+                Path::new(&*dir).join(&img_info.basename)
             } else {
                 return Response::builder()
                     .status(StatusCode::NOT_FOUND)
