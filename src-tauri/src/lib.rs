@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 use tauri::{Manager, Runtime, http::{Request, Response, StatusCode}};
 use std::{path::Path, sync::Mutex};
 use image_worker::resize_image_to_fit;
