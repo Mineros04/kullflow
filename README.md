@@ -6,7 +6,7 @@ KullFlow is a simple image culler / remover built in Tauri. Use it to quickly it
 
 ## Features
 
-WARNING! This software is currently in development and there is currently no release (either testing or stable) available. However, here are the features that are finished / in the works:
+**WARNING!** This software is currently in development and there is currently no release (either testing or stable) available. However, here are the features that are finished / in the works:
 
 - Delete unwanted images quickly.
 - Optimized image resizing and caching.
