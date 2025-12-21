@@ -4,7 +4,7 @@ use std::{path::Path, sync::Mutex};
 use image_worker::resize_image_to_fit;
 
 struct AppState {
-    img_count: Mutex<u32>,
+    img_count: Mutex<usize>,
     img_basenames: Mutex<Vec<String>>,
     img_dir: Mutex<String>
 }
@@ -75,7 +75,7 @@ async fn generate_image_response<R: Runtime>(app: tauri::AppHandle<R>, request: 
 }
 
 #[tauri::command]
-async fn init_images<R: Runtime>(app: tauri::AppHandle<R>, dir_str: &str) -> Result<(), String> {
+async fn init_images<R: Runtime>(app: tauri::AppHandle<R>, dir_str: &str) -> Result<usize, String> {
     let dir_path = Path::new(dir_str);
     
     let mut entries = tokio::fs::read_dir(dir_path).await.map_err(|e| e.to_string())?;
@@ -97,11 +97,12 @@ async fn init_images<R: Runtime>(app: tauri::AppHandle<R>, dir_str: &str) -> Res
     }
 
     let state = app.state::<AppState>();
-    *state.img_count.lock().unwrap() = file_names.len() as u32;
+    let file_names_len = file_names.len();
+    *state.img_count.lock().unwrap() = file_names_len;
     *state.img_basenames.lock().unwrap() = file_names;
     *state.img_dir.lock().unwrap() = dir_str.to_string();
 
-    Ok(())
+    Ok(file_names_len - 1)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
