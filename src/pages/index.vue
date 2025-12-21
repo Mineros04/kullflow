@@ -23,7 +23,7 @@ async function selectDirectory() {
   const imageCount = (await invoke("init_images", { dirStr: dir })) as number;
   router.push({
     path: "/cull",
-    query: { imageCount }
+    state: { imageCount }
   });
 }
 </script>

@@ -3,6 +3,8 @@ import { onMounted, useTemplateRef } from "vue";
 
 import { Icon } from "@iconify/vue";
 
+// eslint-disable-next-line
+const imageCount = (history.state.imageCount as number) ?? 0;
 const canvas = useTemplateRef("canvas");
 
 async function renderImage(idx: number) {
