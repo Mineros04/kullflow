@@ -20,7 +20,7 @@ async fn generate_image_response<R: Runtime>(app: tauri::AppHandle<R>, request: 
             if let Some(name) = basenames.get(idx) {
                 let dir = state.img_dir.lock().unwrap();
                 Path::new(&*dir).join(name)
-    } else {
+            } else {
                 return Response::builder()
                     .status(StatusCode::NOT_FOUND)
                     .header("Access-Control-Allow-Origin", "*")
@@ -29,12 +29,12 @@ async fn generate_image_response<R: Runtime>(app: tauri::AppHandle<R>, request: 
             }
         }
         Err(_) => {
-        return Response::builder()
+            return Response::builder()
                 .status(StatusCode::BAD_REQUEST)
-            .header("Access-Control-Allow-Origin", "*")
+                .header("Access-Control-Allow-Origin", "*")
                 .body("Invalid image index.".as_bytes().to_vec())
-            .unwrap();
-    }
+                .unwrap();
+        }
     };
 
     // Asynchronously read the file and return it as a Response.
@@ -74,6 +74,36 @@ async fn generate_image_response<R: Runtime>(app: tauri::AppHandle<R>, request: 
     }
 }
 
+#[tauri::command]
+async fn init_images<R: Runtime>(app: tauri::AppHandle<R>, dir_str: &str) -> Result<(), String> {
+    let dir_path = Path::new(dir_str);
+    
+    let mut entries = tokio::fs::read_dir(dir_path).await.map_err(|e| e.to_string())?;
+    let mut file_names = Vec::new();
+
+    while let Some(entry) = entries.next_entry().await.map_err(|e| e.to_string())? {
+        let path = entry.path();
+
+        // Ignore non-image files.
+        let mime = mime_guess::from_path(&path).first_or_octet_stream();
+        if mime.type_() != mime::IMAGE {
+            continue;
+        }
+
+        // Only accept valid UTF-8 filenames to ensure they can be opened later.
+        if path.is_file() && let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+            file_names.push(name.to_owned());
+        }
+    }
+
+    let state = app.state::<AppState>();
+    *state.img_count.lock().unwrap() = file_names.len() as u32;
+    *state.img_basenames.lock().unwrap() = file_names;
+    *state.img_dir.lock().unwrap() = dir_str.to_string();
+
+    Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -95,6 +125,7 @@ pub fn run() {
             
             Ok(())
         })
+        .invoke_handler(tauri::generate_handler![init_images])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
