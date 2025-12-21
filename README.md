@@ -1,7 +1,12 @@
-# Tauri + Vue + TypeScript
+<img src="./src-tauri/icons/icon.png" width="128px" align="left">
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+### KullFlow
 
-## Recommended IDE Setup
+KullFlow is a simple image culler / remover built in Tauri. Use it to quickly iterate through a directory with images and choose which ones you want to keep and which to get rid of.
 
-- [VS Code](https://code.visualstudio.com/) + [Vue - Official](https://marketplace.visualstudio.com/items?itemName=Vue.volar) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+## Features
+
+- Delete unwanted images quickly.
+- Optimized image resizing and caching.
+- Easy-to-navigate UI.
+- Multi-platform - tested on Windows 11 and Linux.
