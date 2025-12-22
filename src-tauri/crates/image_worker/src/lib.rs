@@ -1,7 +1,11 @@
-use fast_image_resize::{images::Image, PixelType, Resizer, MulDiv};
+use fast_image_resize::{MulDiv, PixelType, Resizer, images::Image};
 use std::error::Error;
 
-pub fn resize_image_to_fit(buf: Vec<u8>, width: u32, height: u32) -> Result<(Vec<u8>, u32, u32), Box<dyn Error>> {
+pub fn resize_image_to_fit(
+    buf: Vec<u8>,
+    width: u32,
+    height: u32
+) -> Result<(Vec<u8>, u32, u32), Box<dyn Error>> {
     let img = image::load_from_memory(&buf)?;
 
     // 0. Resize ONLY if the image doesn't fit in specified dimensions.
@@ -16,8 +20,8 @@ pub fn resize_image_to_fit(buf: Vec<u8>, width: u32, height: u32) -> Result<(Vec
     // 1. Create source image from byte buffer.
     let mut src_image = Image::from_vec_u8(
         img.width(),
-        img.height(), 
-        img.to_rgba8().into_raw(), 
+        img.height(),
+        img.to_rgba8().into_raw(),
         PixelType::U8x4
     )?;
 
@@ -31,11 +35,7 @@ pub fn resize_image_to_fit(buf: Vec<u8>, width: u32, height: u32) -> Result<(Vec
     let dst_height = ((img.height() as f64 * scale_factor) as u32).max(1);
 
     // 3. Create destination image buffer to store the resized image later.
-    let mut dst_image = Image::new(
-        dst_width,
-        dst_height,
-        src_image.pixel_type()
-    );
+    let mut dst_image = Image::new(dst_width, dst_height, src_image.pixel_type());
 
     // 4. Resize to requested size.
     let mut resizer = Resizer::new();
@@ -47,4 +47,3 @@ pub fn resize_image_to_fit(buf: Vec<u8>, width: u32, height: u32) -> Result<(Vec
 
     Ok((dst_image.into_vec(), dst_width, dst_height))
 }
-

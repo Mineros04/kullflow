@@ -1,7 +1,10 @@
-use serde::{Deserialize, Serialize};
-use tauri::{Manager, Runtime, http::{Request, Response, StatusCode}};
-use std::{path::Path, sync::Mutex};
 use image_worker::resize_image_to_fit;
+use serde::{Deserialize, Serialize};
+use std::{path::Path, sync::Mutex};
+use tauri::{
+    Manager, Runtime,
+    http::{Request, Response, StatusCode},
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
@@ -23,7 +26,10 @@ struct AppState {
     img_dir: Mutex<String>
 }
 
-async fn generate_image_response<R: Runtime>(app: tauri::AppHandle<R>, request: Request<Vec<u8>>) -> Response<Vec<u8>> {
+async fn generate_image_response<R: Runtime>(
+    app: tauri::AppHandle<R>,
+    request: Request<Vec<u8>>
+) -> Response<Vec<u8>> {
     let path_str = request.uri().path();
     let index = path_str.trim_start_matches('/').parse::<usize>();
 
@@ -61,40 +67,38 @@ async fn generate_image_response<R: Runtime>(app: tauri::AppHandle<R>, request: 
             let img_res = resize_image_to_fit(data, 1920, 1080);
             return match img_res {
                 // Image converted successfully.
-                Ok((img, width, height)) => {
-                    Response::builder()
-                        .status(StatusCode::OK)
-                        .header("Content-Type", "application/octet-stream")
-                        .header("X-Image-Width", width)
-                        .header("X-Image-Height", height)
-                        .header("Access-Control-Allow-Origin", "*")
-                        .header("Access-Control-Expose-Headers", "*")
-                        .body(img)
-                        .unwrap()
-                },
+                Ok((img, width, height)) => Response::builder()
+                    .status(StatusCode::OK)
+                    .header("Content-Type", "application/octet-stream")
+                    .header("X-Image-Width", width)
+                    .header("X-Image-Height", height)
+                    .header("Access-Control-Allow-Origin", "*")
+                    .header("Access-Control-Expose-Headers", "*")
+                    .body(img)
+                    .unwrap(),
                 // Resize failed, return error message from resizing.
                 Err(e) => Response::builder()
                     .status(StatusCode::BAD_REQUEST)
                     .header("Access-Control-Allow-Origin", "*")
                     .body(e.to_string().into_bytes())
                     .unwrap()
-            }
+            };
         }
-        Err(_) => {
-            Response::builder()
-                .status(StatusCode::NOT_FOUND)
-                .header("Access-Control-Allow-Origin", "*")
-                .body("File not found.".as_bytes().to_vec())
-                .unwrap()
-        }
+        Err(_) => Response::builder()
+            .status(StatusCode::NOT_FOUND)
+            .header("Access-Control-Allow-Origin", "*")
+            .body("File not found.".as_bytes().to_vec())
+            .unwrap()
     }
 }
 
 #[tauri::command]
 async fn init_images<R: Runtime>(app: tauri::AppHandle<R>, dir_str: &str) -> Result<usize, String> {
     let dir_path = Path::new(dir_str);
-    
-    let mut entries = tokio::fs::read_dir(dir_path).await.map_err(|e| e.to_string())?;
+
+    let mut entries = tokio::fs::read_dir(dir_path)
+        .await
+        .map_err(|e| e.to_string())?;
     let mut images = Vec::new();
 
     while let Some(entry) = entries.next_entry().await.map_err(|e| e.to_string())? {
@@ -107,8 +111,10 @@ async fn init_images<R: Runtime>(app: tauri::AppHandle<R>, dir_str: &str) -> Res
         }
 
         // Only accept valid UTF-8 filenames to ensure they can be opened later.
-        if path.is_file() && let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-            images.push(ImageInfo { 
+        if path.is_file()
+            && let Some(name) = path.file_name().and_then(|n| n.to_str())
+        {
+            images.push(ImageInfo {
                 basename: name.to_string(),
                 status: CullState::Pending
             });
@@ -141,9 +147,9 @@ pub fn run() {
             app.manage(AppState {
                 img_count: Mutex::new(0),
                 images: Mutex::new(Vec::new()),
-                img_dir: Mutex::new("".into()) 
+                img_dir: Mutex::new("".into())
             });
-            
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![init_images])
