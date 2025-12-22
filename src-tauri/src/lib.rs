@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::{path::Path, sync::Mutex};
 use tauri::{
     Manager, Runtime,
-    http::{Request, Response, StatusCode},
+    http::{Request, Response, StatusCode}
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -96,9 +96,7 @@ async fn generate_image_response<R: Runtime>(
 async fn init_images<R: Runtime>(app: tauri::AppHandle<R>, dir_str: &str) -> Result<usize, String> {
     let dir_path = Path::new(dir_str);
 
-    let mut entries = tokio::fs::read_dir(dir_path)
-        .await
-        .map_err(|e| e.to_string())?;
+    let mut entries = tokio::fs::read_dir(dir_path).await.map_err(|e| e.to_string())?;
     let mut images = Vec::new();
 
     while let Some(entry) = entries.next_entry().await.map_err(|e| e.to_string())? {
@@ -114,10 +112,7 @@ async fn init_images<R: Runtime>(app: tauri::AppHandle<R>, dir_str: &str) -> Res
         if path.is_file()
             && let Some(name) = path.file_name().and_then(|n| n.to_str())
         {
-            images.push(ImageInfo {
-                basename: name.to_string(),
-                status: CullState::Pending
-            });
+            images.push(ImageInfo { basename: name.to_string(), status: CullState::Pending });
         }
     }
 

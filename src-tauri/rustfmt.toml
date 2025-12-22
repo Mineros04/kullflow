@@ -1,0 +1,17 @@
+edition = "2024"
+
+max_width = 100
+
+# Trailing commas require unstable features to be enabled.
+unstable_features = true
+trailing_comma = "Never"
+
+reorder_imports = true
+newline_style = "Unix"
+
+# "Max" tells rustfmt to be more aggressive about keeping 
+# things on a single line if they fit within max_width.
+use_small_heuristics = "Max"
+
+# Merges multiple imports from the same crate into one line
+imports_granularity = "Crate"

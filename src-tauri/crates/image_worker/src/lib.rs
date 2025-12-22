@@ -18,12 +18,8 @@ pub fn resize_image_to_fit(
     }
 
     // 1. Create source image from byte buffer.
-    let mut src_image = Image::from_vec_u8(
-        img.width(),
-        img.height(),
-        img.to_rgba8().into_raw(),
-        PixelType::U8x4
-    )?;
+    let mut src_image =
+        Image::from_vec_u8(img.width(), img.height(), img.to_rgba8().into_raw(), PixelType::U8x4)?;
 
     // 2. Multiply alpha to avoid having gray borders in the image.
     // RGBA -> Premultiplied RGBA
