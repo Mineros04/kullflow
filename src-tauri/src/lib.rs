@@ -26,7 +26,7 @@ struct AppState {
     img_dir: Mutex<String>
 }
 
-async fn generate_image_response<R: Runtime>(
+fn generate_image_response<R: Runtime>(
     app: tauri::AppHandle<R>,
     request: Request<Vec<u8>>
 ) -> Response<Vec<u8>> {
@@ -59,8 +59,8 @@ async fn generate_image_response<R: Runtime>(
         }
     };
 
-    // Asynchronously read the file and return it as a Response.
-    match tokio::fs::read(&path).await {
+    // Read the file and return it as a Response.
+    match std::fs::read(&path) {
         Ok(data) => {
             // Resize the image if needed to ensure we do not transfer images that are too large.
             // TODO: Adapt size to users screen (or really anything, so that the dimensions are not static ints).
@@ -93,14 +93,14 @@ async fn generate_image_response<R: Runtime>(
 }
 
 #[tauri::command]
-async fn init_images<R: Runtime>(app: tauri::AppHandle<R>, dir_str: &str) -> Result<usize, String> {
+fn init_images<R: Runtime>(app: tauri::AppHandle<R>, dir_str: &str) -> Result<usize, String> {
     let dir_path = Path::new(dir_str);
 
-    let mut entries = tokio::fs::read_dir(dir_path).await.map_err(|e| e.to_string())?;
+    let mut entries = std::fs::read_dir(&dir_path).map_err(|e| e.to_string())?;
     let mut images = Vec::new();
 
-    while let Some(entry) = entries.next_entry().await.map_err(|e| e.to_string())? {
-        let path = entry.path();
+    while let Some(entry) = entries.next() {
+        let path = entry.map_err(|e| e.to_string())?.path();
 
         // Ignore non-image files.
         let mime = mime_guess::from_path(&path).first_or_octet_stream();
@@ -130,13 +130,9 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_os::init())
-        .register_asynchronous_uri_scheme_protocol("image", |ctx, request, responder| {
+        .register_uri_scheme_protocol("image", |ctx, request| {
             let app = ctx.app_handle().clone();
-            tauri::async_runtime::spawn(async move {
-                let response = generate_image_response(app, request).await;
-
-                responder.respond(response);
-            });
+            generate_image_response(app, request)
         })
         .setup(|app| {
             app.manage(AppState {
