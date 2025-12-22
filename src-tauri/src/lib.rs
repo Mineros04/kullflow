@@ -127,6 +127,8 @@ async fn init_images<R: Runtime>(app: tauri::AppHandle<R>, dir_str: &str) -> Res
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_os::init())
         .register_asynchronous_uri_scheme_protocol("image", |ctx, request, responder| {
             let app = ctx.app_handle().clone();
             tauri::async_runtime::spawn(async move {
@@ -135,7 +137,6 @@ pub fn run() {
                 responder.respond(response);
             });
         })
-        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             app.manage(AppState {
                 img_count: Mutex::new(0),

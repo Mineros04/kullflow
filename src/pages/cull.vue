@@ -2,6 +2,12 @@
 import { onMounted, useTemplateRef } from "vue";
 
 import { Icon } from "@iconify/vue";
+import { family } from "@tauri-apps/plugin-os";
+import { onKeyStroke } from "@vueuse/core";
+
+const osFamily = family();
+const imageBaseUrl =
+  osFamily === "windows" ? "http://image.localhost/" : "image://";
 
 // eslint-disable-next-line
 const imageCount = (history.state.imageCount as number) ?? 0;
@@ -9,7 +15,7 @@ const canvas = useTemplateRef("canvas");
 const helpModal = useTemplateRef("helpModal");
 
 async function renderImage(idx: number) {
-  const res = await fetch(`http://image.localhost/${idx}`);
+  const res = await fetch(imageBaseUrl + idx);
 
   if (!res.ok) {
     console.error("Failed to load image.");
