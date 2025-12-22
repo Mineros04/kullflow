@@ -6,6 +6,7 @@ import { Icon } from "@iconify/vue";
 // eslint-disable-next-line
 const imageCount = (history.state.imageCount as number) ?? 0;
 const canvas = useTemplateRef("canvas");
+const helpModal = useTemplateRef("helpModal");
 
 async function renderImage(idx: number) {
   const res = await fetch(`http://image.localhost/${idx}`);
@@ -87,14 +88,14 @@ onMounted(() => {
     <button
       class="btn btn-lg btn-circle bg-base-100 tooltip tooltip-left"
       data-tip="Help"
-      onclick="help_modal.showModal()"
+      @click="helpModal?.showModal()"
     >
       <icon icon="mdi:help-circle-outline" />
     </button>
   </div>
 
   <!-- Help modal dialog -->
-  <dialog id="help_modal" class="modal">
+  <dialog ref="helpModal" class="modal">
     <div class="modal-box">
       <h3 class="mb-4 flex items-center gap-2 text-2xl font-black">
         <icon icon="mdi:help-circle" class="inline" />
