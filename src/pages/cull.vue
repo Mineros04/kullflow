@@ -40,6 +40,14 @@ async function renderImage(idx: number) {
 onMounted(() => {
   renderImage(0);
 });
+
+onKeyStroke(["ArrowUp", "ArrowDown"], e => {
+  e.preventDefault();
+  const action = e.key === "ArrowUp" ? "keep" : "delete";
+  /**
+   * TODO: Add image vote action call.
+   */
+});
 </script>
 
 <template>
