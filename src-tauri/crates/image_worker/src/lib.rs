@@ -1,11 +1,13 @@
 use fast_image_resize::{MulDiv, PixelType, Resizer, images::Image};
 use std::error::Error;
 
+pub type ImageData = (Vec<u8>, u32, u32);
+
 pub fn resize_image_to_fit(
     buf: Vec<u8>,
     width: u32,
     height: u32
-) -> Result<(Vec<u8>, u32, u32), Box<dyn Error>> {
+) -> Result<ImageData, Box<dyn Error>> {
     let img = image::load_from_memory(&buf)?;
 
     // 1. Resize ONLY if the image doesn't fit in specified dimensions.

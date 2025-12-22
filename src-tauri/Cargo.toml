@@ -30,6 +30,7 @@ mime_guess = "2.0.5"
 mime = "0.3.17"
 image_worker = { path = "crates/image_worker" }
 tauri-plugin-os = "2"
+moka = { version = "0.12.12", features = ["sync"] }
 
 [profile.dev]
 incremental = false
