@@ -27,8 +27,8 @@ pub fn resize_image_to_fit(
     mul_div.multiply_alpha_inplace(&mut src_image)?;
 
     // Calculate destination dimensions based on scale factor.
-    let dst_width = (img.width() as f64 * scale_factor) as u32;
-    let dst_height = (img.height() as f64 * scale_factor) as u32;
+    let dst_width = (img.width() as f64 * scale_factor).round() as u32;
+    let dst_height = (img.height() as f64 * scale_factor).round() as u32;
 
     // 4. Create destination image buffer to store the resized image later.
     let mut dst_image = Image::new(dst_width, dst_height, src_image.pixel_type());
