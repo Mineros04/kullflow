@@ -112,7 +112,7 @@ fn init_images<R: Runtime>(app: tauri::AppHandle<R>, dir_str: &str) -> Result<us
         if path.is_file()
             && let Some(name) = path.file_name().and_then(|n| n.to_str())
         {
-            images.push(ImageInfo { basename: name.to_string(), status: CullState::Pending });
+            images.push(ImageInfo { basename: name.to_owned(), status: CullState::Pending });
         }
     }
 
