@@ -1,9 +1,14 @@
 <script setup lang="ts">
-import { onMounted, useTemplateRef } from "vue";
+import { onMounted, ref, useTemplateRef } from "vue";
 
 import { Icon } from "@iconify/vue";
+import { invoke } from "@tauri-apps/api/core";
 import { family } from "@tauri-apps/plugin-os";
 import { onKeyStroke } from "@vueuse/core";
+
+import { useToast } from "@/lib/toast";
+
+const { createToast } = useToast();
 
 const osFamily = family();
 const imageBaseUrl =
@@ -13,6 +18,7 @@ const imageBaseUrl =
 const imageCount = (history.state.imageCount as number) ?? 0;
 const canvas = useTemplateRef("canvas");
 const helpModal = useTemplateRef("helpModal");
+const imageIdx = ref(0);
 
 async function renderImage(idx: number) {
   const res = await fetch(imageBaseUrl + idx);
@@ -41,12 +47,18 @@ onMounted(() => {
   renderImage(0);
 });
 
-onKeyStroke(["ArrowUp", "ArrowDown"], e => {
+onKeyStroke(["ArrowUp", "ArrowDown"], async e => {
   e.preventDefault();
   const action = e.key === "ArrowUp" ? "keep" : "delete";
-  /**
-   * TODO: Add image vote action call.
-   */
+
+  try {
+    /**
+     * TODO: Add buttons handling, remove toast onclick, ...
+     */
+    await invoke("vote_image", { index: imageIdx, action });
+  } catch (err) {
+    console.error(err);
+  }
 });
 </script>
 
@@ -73,6 +85,13 @@ onKeyStroke(["ArrowUp", "ArrowDown"], e => {
       </button>
       <button
         class="btn btn-circle btn-error btn-lg ring-error ring-offset-base-100 ring-0 focus:ring-2 focus:ring-offset-2"
+        @click="
+          createToast({
+            message: 'hello nigga',
+            type: 'success',
+            duration: 3600_000
+          })
+        "
       >
         <icon icon="mdi:arrow-down-bold" class="text-2xl" />
       </button>
