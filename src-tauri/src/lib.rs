@@ -106,7 +106,6 @@ fn generate_image_response<R: Runtime>(
         Err(e) => Response::builder()
             .status(StatusCode::NOT_FOUND)
             .header("Access-Control-Allow-Origin", "*")
-            // TODO: This is horrific - needs rework.
             .body(e.into_bytes())
             .unwrap()
     }
