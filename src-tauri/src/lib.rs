@@ -29,6 +29,7 @@ pub struct ImageInfo {
 }
 
 struct AppState {
+    // TODO: Consider using RWMutexes instead (we write once and read a lot).
     img_count: Mutex<usize>,
     images: Mutex<Vec<ImageInfo>>,
     img_dir: Mutex<String>,
@@ -92,6 +93,17 @@ fn generate_image_response<R: Runtime>(
                     }
                 }
             });
+
+            // Update window title to the currently open image.
+            let curr_img = state.images.lock().unwrap().get(index).cloned();
+            if let Some(curr_img) = curr_img {
+                let window = app.get_webview_window("main").unwrap();
+                let title = format!("KullFlow - {}", curr_img.basename);
+
+                if let Err(err) = window.set_title(&title) {
+                    eprintln!("ERROR: Failed to update window title on image load:\n{err}");
+                }
+            }
 
             Response::builder()
                 .status(StatusCode::OK)
