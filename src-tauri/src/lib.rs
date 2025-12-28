@@ -6,7 +6,10 @@ use tauri::{
     Manager, Runtime,
     http::{Request, Response, StatusCode}
 };
-use tauri_plugin_log::{RotationStrategy, Target, TargetKind, log};
+use tauri_plugin_log::{
+    RotationStrategy, Target, TargetKind,
+    log::{self, LevelFilter}
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
@@ -172,6 +175,8 @@ fn init_images<R: Runtime>(app: tauri::AppHandle<R>, dir_str: &str) -> Result<us
     *state.images.lock().unwrap() = images;
     *state.img_dir.lock().unwrap() = dir_str.to_string();
 
+    log::info!("Initialized app state with {images_len} images.");
+
     Ok(images_len)
 }
 
@@ -201,11 +206,9 @@ pub fn run() {
     if let Err(e) = tauri::Builder::default()
         .plugin(
             tauri_plugin_log::Builder::new()
-                .level(if cfg!(debug_assertions) {
-                    log::LevelFilter::Trace
-                } else {
-                    log::LevelFilter::Info
-                })
+                .level(if cfg!(debug_assertions) { LevelFilter::Trace } else { LevelFilter::Info })
+                // Disable tao's warnings, as they clutter the logs.
+                .level_for("tao", LevelFilter::Error)
                 .targets([
                     Target::new(TargetKind::Stdout),
                     Target::new(TargetKind::LogDir { file_name: Some("kullflow.log".into()) })
