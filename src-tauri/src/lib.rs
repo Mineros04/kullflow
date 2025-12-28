@@ -49,8 +49,11 @@ fn process_image<R: Runtime>(app: &tauri::AppHandle<R>, index: usize) -> Result<
     drop(dir);
 
     let img_bytes = std::fs::read(&path).map_err(|e| e.to_string())?;
-    // TODO: Use adaptive dimensions based on user's screen (or app window).
-    resize_image_to_fit(img_bytes, 1920, 1080).map_err(|e| e.to_string())
+
+    let window = app.get_webview_window("main").unwrap();
+    let window_size = window.inner_size().map_err(|e| e.to_string())?;
+    resize_image_to_fit(img_bytes, window_size.width.min(1920), window_size.height.min(1080))
+        .map_err(|e| e.to_string())
 }
 
 fn generate_image_response<R: Runtime>(
@@ -90,7 +93,7 @@ fn generate_image_response<R: Runtime>(
                     if !state.image_cache.contains_key(&next_idx) {
                         match process_image(&app_handle, next_idx) {
                             Ok(res) => {
-                            state.image_cache.insert(next_idx, res);
+                                state.image_cache.insert(next_idx, res);
                             }
                             Err(e) => log::warn!("Failed to pre-fetch image {next_idx}: {e}")
                         }
@@ -123,10 +126,10 @@ fn generate_image_response<R: Runtime>(
             log::error!("Failed to resize image: {e}");
 
             Response::builder()
-            .status(StatusCode::NOT_FOUND)
-            .header("Access-Control-Allow-Origin", "*")
-            .body(e.into_bytes())
-            .unwrap()
+                .status(StatusCode::NOT_FOUND)
+                .header("Access-Control-Allow-Origin", "*")
+                .body(e.into_bytes())
+                .unwrap()
         }
     }
 }
