@@ -8,7 +8,7 @@ use tauri::{
 };
 use tauri_plugin_log::{
     RotationStrategy, Target, TargetKind,
-    log::{self, LevelFilter}
+    log::{LevelFilter, error, info, warn}
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -98,7 +98,7 @@ fn generate_image_response<R: Runtime>(
                             Ok(res) => {
                                 state.image_cache.insert(next_idx, res);
                             }
-                            Err(e) => log::warn!("Failed to pre-fetch image {next_idx}: {e}")
+                            Err(e) => warn!("Failed to pre-fetch image {next_idx}: {e}")
                         }
                     }
                 }
@@ -111,7 +111,7 @@ fn generate_image_response<R: Runtime>(
                 let title = format!("KullFlow - {}", curr_img.basename);
 
                 if let Err(e) = window.set_title(&title) {
-                    log::warn!("Failed to update window title on image load: {e}");
+                    warn!("Failed to update window title on image load: {e}");
                 }
             }
 
@@ -126,7 +126,7 @@ fn generate_image_response<R: Runtime>(
                 .unwrap()
         }
         Err(e) => {
-            log::error!("Failed to resize image: {e}");
+            error!("Failed to resize image: {e}");
 
             Response::builder()
                 .status(StatusCode::NOT_FOUND)
@@ -142,7 +142,7 @@ fn init_images<R: Runtime>(app: tauri::AppHandle<R>, dir_str: &str) -> Result<us
     let dir_path = Path::new(dir_str);
 
     let mut entries = std::fs::read_dir(&dir_path).map_err(|e| {
-        log::error!("Failed to read directory: {e}");
+        error!("Failed to read directory: {e}");
         e.to_string()
     })?;
     let mut images = Vec::new();
@@ -150,7 +150,7 @@ fn init_images<R: Runtime>(app: tauri::AppHandle<R>, dir_str: &str) -> Result<us
     while let Some(entry) = entries.next() {
         let path = entry
             .map_err(|e| {
-                log::error!("Failed to read directory entry: {e}");
+                error!("Failed to read directory entry: {e}");
                 e.to_string()
             })?
             .path();
@@ -175,7 +175,7 @@ fn init_images<R: Runtime>(app: tauri::AppHandle<R>, dir_str: &str) -> Result<us
     *state.images.lock().unwrap() = images;
     *state.img_dir.lock().unwrap() = dir_str.to_string();
 
-    log::info!("Initialized app state with {images_len} images");
+    info!("Initialized app state with {images_len} images");
 
     Ok(images_len)
 }
@@ -238,6 +238,6 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![init_images, vote_image])
         .run(tauri::generate_context!())
     {
-        log::error!("Failed to start KullFlow: {e}");
+        error!("Failed to start KullFlow: {e}");
     }
 }
