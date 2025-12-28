@@ -44,7 +44,7 @@ fn process_image<R: Runtime>(app: &tauri::AppHandle<R>, index: usize) -> Result<
     let state = app.state::<AppState>();
 
     let images = state.images.lock().unwrap();
-    let img_info = images.get(index).ok_or("Image index out of bounds.")?;
+    let img_info = images.get(index).ok_or("Image index out of bounds")?;
     let dir = state.img_dir.lock().unwrap();
     let path = Path::new(&*dir).join(&img_info.basename);
 
@@ -70,7 +70,7 @@ fn generate_image_response<R: Runtime>(
             return Response::builder()
                 .status(StatusCode::BAD_REQUEST)
                 .header("Access-Control-Allow-Origin", "*")
-                .body("Invalid image index.".as_bytes().to_vec())
+                .body("Invalid image index".as_bytes().to_vec())
                 .unwrap();
         }
     };
@@ -175,7 +175,7 @@ fn init_images<R: Runtime>(app: tauri::AppHandle<R>, dir_str: &str) -> Result<us
     *state.images.lock().unwrap() = images;
     *state.img_dir.lock().unwrap() = dir_str.to_string();
 
-    log::info!("Initialized app state with {images_len} images.");
+    log::info!("Initialized app state with {images_len} images");
 
     Ok(images_len)
 }
@@ -195,7 +195,7 @@ fn vote_image<R: Runtime>(
             VoteAction::Delete => CullState::Delete
         };
     } else {
-        return Err("Image index out of bounds.".into());
+        return Err("Image index out of bounds".into());
     }
 
     Ok(())

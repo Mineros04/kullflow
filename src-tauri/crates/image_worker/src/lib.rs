@@ -1,4 +1,5 @@
 use fast_image_resize::{MulDiv, PixelType, Resizer, images::Image};
+use log::debug;
 use std::error::Error;
 
 pub type ImageData = (Vec<u8>, u32, u32);
@@ -16,6 +17,13 @@ pub fn resize_image_to_fit(
     let scale_factor = width_ratio.min(height_ratio);
 
     if scale_factor >= 1.0 {
+        debug!(
+            "Skipping resize: image ({}x{}) fits within {}x{}",
+            img.width(),
+            img.height(),
+            width,
+            height
+        );
         return Ok((buf, img.width(), img.height()));
     }
 
@@ -31,6 +39,8 @@ pub fn resize_image_to_fit(
     // Calculate destination dimensions based on scale factor.
     let dst_width = (img.width() as f64 * scale_factor).round() as u32;
     let dst_height = (img.height() as f64 * scale_factor).round() as u32;
+
+    debug!("Resizing image from {}x{} to {}x{}", img.width(), img.height(), dst_width, dst_height);
 
     // 4. Create destination image buffer to store the resized image later.
     let mut dst_image = Image::new(dst_width, dst_height, src_image.pixel_type());
