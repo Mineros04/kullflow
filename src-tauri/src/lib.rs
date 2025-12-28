@@ -198,7 +198,7 @@ fn vote_image<R: Runtime>(
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    if let Err(e) = tauri::Builder::default()
         .plugin(
             tauri_plugin_log::Builder::new()
                 .level(if cfg!(debug_assertions) {
@@ -234,5 +234,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![init_images, vote_image])
         .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+    {
+        log::error!("Failed to start KullFlow: {e}");
+    }
 }
