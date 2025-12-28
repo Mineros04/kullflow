@@ -6,6 +6,7 @@ use tauri::{
     Manager, Runtime,
     http::{Request, Response, StatusCode}
 };
+use tauri_plugin_log::{RotationStrategy, Target, TargetKind, log};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
@@ -87,8 +88,11 @@ fn generate_image_response<R: Runtime>(
                 for i in 1..=5 {
                     let next_idx = index + i;
                     if !state.image_cache.contains_key(&next_idx) {
-                        if let Ok(res) = process_image(&app_handle, next_idx) {
+                        match process_image(&app_handle, next_idx) {
+                            Ok(res) => {
                             state.image_cache.insert(next_idx, res);
+                            }
+                            Err(e) => log::warn!("Failed to pre-fetch image {next_idx}: {e}")
                         }
                     }
                 }
@@ -100,8 +104,8 @@ fn generate_image_response<R: Runtime>(
                 let window = app.get_webview_window("main").unwrap();
                 let title = format!("KullFlow - {}", curr_img.basename);
 
-                if let Err(err) = window.set_title(&title) {
-                    eprintln!("ERROR: Failed to update window title on image load:\n{err}");
+                if let Err(e) = window.set_title(&title) {
+                    log::warn!("Failed to update window title on image load: {e}");
                 }
             }
 
@@ -115,11 +119,15 @@ fn generate_image_response<R: Runtime>(
                 .body(img)
                 .unwrap()
         }
-        Err(e) => Response::builder()
+        Err(e) => {
+            log::error!("Failed to resize image: {e}");
+
+            Response::builder()
             .status(StatusCode::NOT_FOUND)
             .header("Access-Control-Allow-Origin", "*")
             .body(e.into_bytes())
             .unwrap()
+        }
     }
 }
 
@@ -127,11 +135,19 @@ fn generate_image_response<R: Runtime>(
 fn init_images<R: Runtime>(app: tauri::AppHandle<R>, dir_str: &str) -> Result<usize, String> {
     let dir_path = Path::new(dir_str);
 
-    let mut entries = std::fs::read_dir(&dir_path).map_err(|e| e.to_string())?;
+    let mut entries = std::fs::read_dir(&dir_path).map_err(|e| {
+        log::error!("Failed to read directory: {e}");
+        e.to_string()
+    })?;
     let mut images = Vec::new();
 
     while let Some(entry) = entries.next() {
-        let path = entry.map_err(|e| e.to_string())?.path();
+        let path = entry
+            .map_err(|e| {
+                log::error!("Failed to read directory entry: {e}");
+                e.to_string()
+            })?
+            .path();
 
         // Ignore non-image files.
         let mime = mime_guess::from_path(&path).first_or_octet_stream();
@@ -180,6 +196,21 @@ fn vote_image<R: Runtime>(
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(
+            tauri_plugin_log::Builder::new()
+                .level(if cfg!(debug_assertions) {
+                    log::LevelFilter::Trace
+                } else {
+                    log::LevelFilter::Info
+                })
+                .targets([
+                    Target::new(TargetKind::Stdout),
+                    Target::new(TargetKind::LogDir { file_name: Some("kullflow.log".into()) })
+                ])
+                .rotation_strategy(RotationStrategy::KeepSome(5))
+                .max_file_size(1_000_000)
+                .build()
+        )
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_os::init())
         .register_uri_scheme_protocol("image", |ctx, request| {
