@@ -3,10 +3,12 @@ import { onMounted, ref, useTemplateRef } from "vue";
 
 import { Icon } from "@iconify/vue";
 import { invoke } from "@tauri-apps/api/core";
+import { debug, error } from "@tauri-apps/plugin-log";
 import { family } from "@tauri-apps/plugin-os";
 import { onKeyStroke } from "@vueuse/core";
 
 import { useToast } from "@/lib/toast";
+import type { ImageVote } from "@/lib/types";
 
 const { createToast } = useToast();
 
@@ -47,18 +49,23 @@ onMounted(() => {
   renderImage(0);
 });
 
+async function voteImage(action: ImageVote) {
+  try {
+    await invoke("vote_image", { index: imageIdx.value, action });
+    debug(`Voted "${action}" on image at index ${imageIdx.value}`);
+  } catch (err) {
+    error(
+      `Failed to cast "${action}" vote for image ${imageIdx.value}: ${err}`
+    );
+    createToast({ message: "Failed to vote for image.", type: "error" });
+  }
+}
+
 onKeyStroke(["ArrowUp", "ArrowDown"], async e => {
   e.preventDefault();
   const action = e.key === "ArrowUp" ? "keep" : "delete";
 
-  try {
-    /**
-     * TODO: Add buttons handling, remove toast onclick, ...
-     */
-    await invoke("vote_image", { index: imageIdx, action });
-  } catch (err) {
-    console.error(err);
-  }
+  await voteImage(action);
 });
 </script>
 
@@ -80,18 +87,13 @@ onKeyStroke(["ArrowUp", "ArrowDown"], async e => {
     <div class="bg-base-100/20 flex gap-2 rounded-full p-4 backdrop-blur-md">
       <button
         class="btn btn-circle btn-success btn-lg ring-success ring-offset-base-100 ring-0 focus:ring-2 focus:ring-offset-2"
+        @click="voteImage('keep')"
       >
         <icon icon="mdi:arrow-up-bold" class="text-2xl" />
       </button>
       <button
         class="btn btn-circle btn-error btn-lg ring-error ring-offset-base-100 ring-0 focus:ring-2 focus:ring-offset-2"
-        @click="
-          createToast({
-            message: 'hello nigga',
-            type: 'success',
-            duration: 3600_000
-          })
-        "
+        @click="voteImage('delete')"
       >
         <icon icon="mdi:arrow-down-bold" class="text-2xl" />
       </button>
