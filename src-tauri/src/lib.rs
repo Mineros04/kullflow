@@ -1,5 +1,3 @@
-use image_worker::{ImageData, resize_image_to_fit};
-use moka::sync::Cache;
 use serde::{Deserialize, Serialize};
 use std::{path::Path, sync::Mutex};
 use tauri::{
@@ -36,27 +34,7 @@ struct AppState {
     // TODO: Consider using RWMutexes instead (we write once and read a lot).
     img_count: Mutex<usize>,
     images: Mutex<Vec<ImageInfo>>,
-    img_dir: Mutex<String>,
-    image_cache: Cache<usize, ImageData>
-}
-
-fn process_image<R: Runtime>(app: &tauri::AppHandle<R>, index: usize) -> Result<ImageData, String> {
-    let state = app.state::<AppState>();
-
-    let images = state.images.lock().unwrap();
-    let img_info = images.get(index).ok_or("Image index out of bounds")?;
-    let dir = state.img_dir.lock().unwrap();
-    let path = Path::new(&*dir).join(&img_info.basename);
-
-    drop(images);
-    drop(dir);
-
-    let img_bytes = std::fs::read(&path).map_err(|e| e.to_string())?;
-
-    let window = app.get_webview_window("main").unwrap();
-    let window_size = window.inner_size().map_err(|e| e.to_string())?;
-    resize_image_to_fit(img_bytes, window_size.width.min(1920), window_size.height.min(1080))
-        .map_err(|e| e.to_string())
+    img_dir: Mutex<String>
 }
 
 fn generate_image_response<R: Runtime>(
@@ -77,38 +55,24 @@ fn generate_image_response<R: Runtime>(
 
     let state = app.state::<AppState>();
 
-    // Get cached image; if not found, process it now.
-    let result = if let Some(cached) = state.image_cache.remove(&index) {
-        Ok(cached)
-    } else {
-        process_image(&app, index)
+    let (path, basename) = {
+        let images = state.images.lock().unwrap();
+        let Some(image) = images.get(index) else {
+            return Response::builder()
+                .status(StatusCode::NOT_FOUND)
+                .header("Cache-Control", "no-store")
+                .body(b"Image index out of bounds".to_vec())
+                .unwrap();
+        };
+        let dir = state.img_dir.lock().unwrap();
+        (Path::new(&*dir).join(&image.basename), image.basename.clone())
     };
 
-    match result {
-        Ok((img, width, height)) => {
-            let app_handle = app.clone();
-            // Preprocess (resize) images in the background.
-            std::thread::spawn(move || {
-                let state = app_handle.state::<AppState>();
-                // TODO: Make it react to max cache size.
-                for i in 1..=5 {
-                    let next_idx = index + i;
-                    if !state.image_cache.contains_key(&next_idx) {
-                        match process_image(&app_handle, next_idx) {
-                            Ok(res) => {
-                                state.image_cache.insert(next_idx, res);
-                            }
-                            Err(e) => warn!("Failed to pre-fetch image {next_idx}: {e}")
-                        }
-                    }
-                }
-            });
-
+    match std::fs::read(&path) {
+        Ok(bytes) => {
             // Update window title to the currently open image.
-            let curr_img = state.images.lock().unwrap().get(index).cloned();
-            if let Some(curr_img) = curr_img {
-                let window = app.get_webview_window("main").unwrap();
-                let title = format!("KullFlow - {}", curr_img.basename);
+            if let Some(window) = app.get_webview_window("main") {
+                let title = format!("KullFlow - {basename}");
 
                 if let Err(e) = window.set_title(&title) {
                     warn!("Failed to update window title on image load: {e}");
@@ -117,21 +81,24 @@ fn generate_image_response<R: Runtime>(
 
             Response::builder()
                 .status(StatusCode::OK)
-                .header("Content-Type", "application/octet-stream")
-                .header("X-Image-Width", width)
-                .header("X-Image-Height", height)
+                .header(
+                    "Content-Type",
+                    mime_guess::from_path(&path).first_or_octet_stream().as_ref()
+                )
+                // Indices are reused when a different directory is selected.
+                .header("Cache-Control", "no-store")
                 .header("Access-Control-Allow-Origin", "*")
-                .header("Access-Control-Expose-Headers", "*")
-                .body(img)
+                .body(bytes)
                 .unwrap()
         }
         Err(e) => {
-            error!("Failed to resize image: {e}");
+            error!("Failed to read image {}: {e}", path.display());
 
             Response::builder()
                 .status(StatusCode::NOT_FOUND)
+                .header("Cache-Control", "no-store")
                 .header("Access-Control-Allow-Origin", "*")
-                .body(e.into_bytes())
+                .body(e.to_string().into_bytes())
                 .unwrap()
         }
     }
@@ -218,19 +185,15 @@ pub fn run() {
                 .build()
         )
         .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_os::init())
         .register_uri_scheme_protocol("image", |ctx, request| {
             let app = ctx.app_handle().clone();
             generate_image_response(app, request)
         })
         .setup(|app| {
-            let image_cache = Cache::builder().max_capacity(5).build();
-
             app.manage(AppState {
                 img_count: Mutex::new(0),
                 images: Mutex::new(Vec::new()),
-                img_dir: Mutex::new("".into()),
-                image_cache
+                img_dir: Mutex::new("".into())
             });
 
             Ok(())

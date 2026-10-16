@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { onMounted, ref, useTemplateRef } from "vue";
+import { computed, ref, useTemplateRef } from "vue";
 
 import { Icon } from "@iconify/vue";
-import { invoke } from "@tauri-apps/api/core";
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { debug, error } from "@tauri-apps/plugin-log";
-import { family } from "@tauri-apps/plugin-os";
 import { onKeyStroke } from "@vueuse/core";
 
 import { useToast } from "@/lib/toast";
@@ -12,42 +11,20 @@ import type { ImageVote } from "@/lib/types";
 
 const { createToast } = useToast();
 
-const osFamily = family();
-const imageBaseUrl =
-  osFamily === "windows" ? "http://image.localhost/" : "image://";
-
-// eslint-disable-next-line
 const imageCount = (history.state.imageCount as number) ?? 0;
-const canvas = useTemplateRef("canvas");
 const helpModal = useTemplateRef("helpModal");
 const imageIdx = ref(0);
+const imageLoading = ref(true);
+const imageFailed = ref(false);
+const imageUrl = computed(() =>
+  convertFileSrc(String(imageIdx.value), "image")
+);
 
-async function renderImage(idx: number) {
-  const res = await fetch(imageBaseUrl + idx);
-
-  if (!res.ok) {
-    console.error("Failed to load image.");
-    return;
-  }
-
-  const width = parseInt(res.headers.get("X-Image-Width")!);
-  const height = parseInt(res.headers.get("X-Image-Height")!);
-
-  const buffer = await res.arrayBuffer();
-  const ctx = canvas.value!.getContext("2d")!;
-
-  canvas.value!.width = width;
-  canvas.value!.height = height;
-
-  const pixelData = new Uint8ClampedArray(buffer);
-  const imageData = new ImageData(pixelData, width, height);
-
-  ctx.putImageData(imageData, 0, 0);
+function onImageError() {
+  imageLoading.value = false;
+  imageFailed.value = true;
+  error(`Failed to load image at index ${imageIdx.value}`);
 }
-
-onMounted(() => {
-  renderImage(0);
-});
 
 async function voteImage(action: ImageVote) {
   try {
@@ -77,9 +54,27 @@ onKeyStroke(["ArrowUp", "ArrowDown"], async e => {
     class="fixed top-0 left-0 -z-1 h-screen w-screen object-cover brightness-50"
   />
 
-  <!-- Image rendering canvas -->
+  <!-- The webview decodes the original image; CSS fits it within the viewport. -->
   <div class="grid h-screen w-screen place-items-center">
-    <canvas ref="canvas" class="h-screen"></canvas>
+    <template v-if="imageCount > 0">
+      <img
+        v-show="!imageLoading && !imageFailed"
+        :src="imageUrl"
+        alt="Current image for culling"
+        class="max-h-screen max-w-full object-contain"
+        @load="imageLoading = false"
+        @error="onImageError"
+      />
+      <span
+        v-if="imageLoading"
+        class="loading loading-spinner loading-lg"
+      ></span>
+      <p v-else-if="imageFailed" role="alert">
+        Unable to display this image. It may be missing, damaged, or
+        unsupported.
+      </p>
+    </template>
+    <p v-else>No images found in this directory.</p>
   </div>
 
   <!-- Actions dock -->
